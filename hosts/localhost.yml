@@ -1,0 +1,27 @@
+http:
+  routers:
+    frontend-router:
+      rule: Host(`localhost`)
+      service: frontend-service
+    backend-router:
+      rule: Host(`localhost`) && PathPrefix(`/api`)
+      service: backend-service
+      middlewares:
+        - strip-backendprefix
+
+  services:
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://chmury_projekt_frontend_1:8000"
+    backend-service:
+      loadBalancer:
+        servers:
+          - url: "http://chmury_projekt_backend_1:8080"
+
+  middlewares:
+    strip-backendprefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
+        forceslash: true

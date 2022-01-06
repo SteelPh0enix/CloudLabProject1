@@ -1,0 +1,69 @@
+version: '3'
+services:
+  database:
+    image: 'mysql:8.0'
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=fibo_mysql_root
+      - MYSQL_DATABASE=fibonacci
+      - MYSQL_USER=fibonacci
+      - MYSQL_PASSWORD=fibo_mysql_password
+    networks:
+      - app
+    expose:
+      - 3306
+    cap_add:
+      - SYS_NICE # to prevent mbind: Operation not permitted spam in logs
+
+  backend:
+    depends_on:
+      - database
+    build: ./backend
+    volumes:
+      - ./backend:/backend/app
+    networks:
+      - app
+    expose:
+      - 8080
+  
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/frontend/app
+    environment:
+      - BACKEND_HOST=localhost # note - this has to be host accessible from client browser, not from inside docker container!
+      - BACKEND_PORT=80
+    networks:
+      - app
+    expose:
+      - 8000
+
+  traefik:
+    image: traefik:v2.5
+    ports:
+      - "80:80"
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      - "./hosts:/hosts"
+      - "./traefik_data/:/opt/traefik/"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/hosts"
+      - "--providers.file.watch=true"
+      - "--accesslog=true"
+      - "--accesslog.filepath=/opt/traefik/access.log"
+      - "--entryPoints.web.address=:80"
+      - "--api.insecure"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`localhost`) && PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+    networks:
+      - app
+
+networks:
+  app:

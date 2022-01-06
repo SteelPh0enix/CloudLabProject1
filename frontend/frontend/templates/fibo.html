@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Fibonacci calculator</title>
+
+        <style>
+            table, th, td {
+                border: 1px solid black;
+            }
+        </style>
+
+        <script>
+            async function getFibonacciValueFromBackend(position) {
+                const response = await fetch('http://{{ backend_host }}:{{ backend_port }}/api/calculate/' + position.toString());
+                return response.json();
+            }
+
+            async function getFibonacciHistoryFromBackend(count) {
+                const response = await fetch('http://{{ backend_host }}:{{ backend_port }}/api/history/' + count.toString());
+                return response.json();
+            }
+
+            function clearHistoryTable() {
+                let historyTable = document.getElementById('fibonacci_history_table'); 
+                
+                const rows = historyTable.getElementsByClassName('fibo_value_row');
+                while (rows.length > 0) {
+                    rows[0].parentNode.removeChild(rows[0]);
+                }
+            }
+
+            function addItemToHistoryTable(index, value) {
+                let historyTable = document.getElementById('fibonacci_history_table'); 
+
+                const row = historyTable.insertRow();
+                row.className = 'fibo_value_row';
+                const index_cell = row.insertCell();
+                const value_cell = row.insertCell();
+
+                index_cell.appendChild(document.createTextNode(index.toString()));
+                value_cell.appendChild(document.createTextNode(value.toString()));
+            }
+
+            function updateCalculationHistory() {
+                getFibonacciHistoryFromBackend(10).then((val) => {
+                    if(val['count'] > 0) {
+                        clearHistoryTable();
+                        for(const item of val['items']) {
+                            addItemToHistoryTable(item['index'], item['value'])
+                        }
+                    }
+                });
+            }
+
+            function updateValue() {
+                let valueInput = document.getElementById('fibonacci_input');
+                let valueOutput = document.getElementById('fibonacci_value');
+                 
+                let requestedValue = parseInt(valueInput.value)
+                getFibonacciValueFromBackend(requestedValue).then((val) => { 
+                    if (val['requested_value_too_big']) {
+                        valueOutput.innerHTML = '<b>Too big number!</b>';
+                    } else {
+                        valueOutput.innerHTML = val['value'];
+                        updateCalculationHistory();
+                    }
+                });
+            }
+        </script>
+    </head>
+
+    <body>
+        <label for="fibonacci_input">Enter the number of element in Fibonacci sequence to calculate:</label>
+        <input type="text" id="fibonacci_input" name="fibonacci_input"/>
+        <button type="button" id="fibonacci_calculate" name="fibonacci_calculate" onClick="updateValue();">Gimme number!</button>
+        <br>
+        <div id="fibonacci_value"></div>
+        <br>
+        <div id="fibonacci_history">
+            <label for="fibonacci_history_table">Recently calculated values:</label>
+            <table id="fibonacci_history_table">
+                <tr>
+                    <th>Index</th>
+                    <th>Value</th>
+                </tr>
+            </table>
+        </div>
+
+        <br>
+        <p><a href="/">Go back to the home page</a></p>
+
+        <script>updateCalculationHistory(5);</script>
+    </body>
+</html>
