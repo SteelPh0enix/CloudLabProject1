@@ -11,7 +11,7 @@ The containers are:
 
 ## Application schematic
 
-![scheme](./scheme.png)
+![scheme](./img/scheme.png)
 
 ## Running this app
 
@@ -66,3 +66,17 @@ Traefik is a router/proxy service that puts the app services togeher under a sin
 It also provides a handy web interface to see it's current status - go to <http://localhost:8080/dashboard> to see it.
 
 You can also see it's logs in `traefik_data/access.log` file, which will automatically appear after running the container.
+
+## Screenshots
+
+### Correct startup log
+
+![startup](./img/working_log.png)
+
+### Main page
+
+![main_page](./img/main_page.png)
+
+### Calculator
+
+![calculator](./img/calculator.png)
